@@ -2,10 +2,15 @@
 
 %% main entry point
 main(Args) ->
-  {ok, State} = main(Args, []),
-  LockFile = resolve_lockfile(proplists:get_value(dir, State)),
-  {ok, Terms} = file:consult(LockFile),
-  {ok, _} = to_nix(Terms).
+  case main(Args, []) of
+    {ok, State} ->
+      LockFile = resolve_lockfile(proplists:get_value(dir, State)),
+      {ok, Terms} = file:consult(LockFile),
+      {ok, _} = to_nix(Terms);
+    {error, Reason} ->
+      io:format("Error: ~s~n", [Reason]),
+      halt(1)
+  end.
 
 %% argument parsing
 main([], State) ->
@@ -14,9 +19,9 @@ main([], State) ->
 main(["--dir", Dir | Rest], State) ->
   NewState = [{dir, Dir} | State],
   main(Rest, NewState);
-main([Arg | Rest], State) ->
-  io:format("Warning: unknown argument ~s, ignoring.~n", [Arg]),
-  main(Rest, State).
+main([Arg | _Rest], _State) ->
+  io:put_chars(standard_error, "Usage: rebarlock2nix [--dir DIR]\n"),
+  {error, io_lib:format("Unknown argument ~s.", [Arg])}.
 
 %% Resolve lockfile based on dir
 resolve_lockfile(undefined) ->
