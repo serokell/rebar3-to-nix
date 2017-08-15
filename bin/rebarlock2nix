@@ -1,0 +1,54 @@
+#!/usr/bin/env escript
+
+%% main entry point
+main(Args) ->
+  {ok, State} = main(Args, []),
+  LockFile = resolve_lockfile(proplists:get_value(dir, State)),
+  {ok, Terms} = file:consult(LockFile),
+  {ok, _} = to_nix(Terms).
+
+%% argument parsing
+main([], State) ->
+  %io:format("State: ~p~n", [State]),
+  {ok, State};
+main(["--dir", Dir | Rest], State) ->
+  NewState = [{dir, Dir} | State],
+  main(Rest, NewState);
+main([Arg | Rest], State) ->
+  io:format("Warning: unknown argument ~s, ignoring.~n", [Arg]),
+  main(Rest, State).
+
+%% Resolve lockfile based on dir
+resolve_lockfile(undefined) ->
+  {ok, Cwd} = file:get_cwd(),
+  filename:join(Cwd, "rebar.lock");
+resolve_lockfile(Dir) ->
+  filename:join(Dir, "rebar.lock").
+
+%% Convert rebar.lock terms to NixExpression
+to_nix([{"1.1.0", Pkgs}, [{pkg_hash, Hashes}]]) ->
+  PkgsProps = lists:map(fun({PName, Meta, Num}) -> {PName, {Meta, Num}} end, Pkgs),
+  PkgNames = proplists:get_keys(PkgsProps),
+  Tuples = lists:map(fun(Name) -> {Name, proplists:get_value(Name, PkgsProps), proplists:get_value(Name, Hashes)} end, PkgNames),
+  io:format("{", []),
+  lists:map(fun(X) -> to_src_expr(X) end, Tuples),
+  io:format("}", []),
+  {ok, Tuples}.
+
+to_src_expr({Name, {{pkg, PName, Ver}, _Num}, Hash}) ->
+  io:format(<<"
+    \"~s\" = {
+      name = \"~s\";
+      type = \"hexpm\";
+      version = \"~s\";
+      sha256 = \"~s\";
+    };~n">>, [Name, PName, Ver, Hash]),
+  ok;
+to_src_expr({Name, {{git, Url, {ref, Ref}}, _Num}, _Hash}) ->
+  io:format(<<"
+    \"~s\" = {
+      type = \"git\";
+      url = \"~s\";
+      rev = \"~s\";
+    };~n">>, [Name, Url, Ref]),
+  ok.
