@@ -1,6 +1,5 @@
 #!/usr/bin/env escript
 
-%% main entry point
 main(Args) ->
   case main(Args, []) of
     {ok, State} ->
@@ -12,9 +11,7 @@ main(Args) ->
       halt(1)
   end.
 
-%% argument parsing
 main([], State) ->
-  %io:format("State: ~p~n", [State]),
   {ok, State};
 main(["--dir", Dir | Rest], State) ->
   NewState = [{dir, Dir} | State],
@@ -23,14 +20,12 @@ main([Arg | _Rest], _State) ->
   io:put_chars(standard_error, "Usage: rebar32nix [--dir DIR]\n"),
   {error, io_lib:format("Unknown argument ~s.", [Arg])}.
 
-%% Resolve lockfile based on dir
 resolve_lockfile(undefined) ->
   {ok, Cwd} = file:get_cwd(),
   filename:join(Cwd, "rebar.lock");
 resolve_lockfile(Dir) ->
   filename:join(Dir, "rebar.lock").
 
-%% Convert rebar.lock terms to NixExpression
 to_nix([Pkgs]) ->
   PkgsProps = lists:map(fun({PName, Meta, Num}) -> {PName, {Meta, Num}} end, Pkgs),
   PkgNames = proplists:get_keys(PkgsProps),
