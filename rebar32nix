@@ -14,11 +14,10 @@ main(Args) ->
 main([], State) ->
   {ok, State};
 main(["--dir", Dir | Rest], State) ->
-  NewState = [{dir, Dir} | State],
-  main(Rest, NewState);
+  main(Rest, [{dir, Dir} | State]);
 main([Arg | _Rest], _State) ->
   io:put_chars(standard_error, "Usage: rebar32nix [--dir DIR]\n"),
-  {error, io_lib:format("Unknown argument ~s.", [Arg])}.
+  {error, io_lib:format("Unknown argument: ~s", [Arg])}.
 
 resolve_lockfile(undefined) ->
   {ok, Cwd} = file:get_cwd(),
