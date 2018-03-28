@@ -1,10 +1,12 @@
 #!/usr/bin/env escript
 
+resolve_lock(undefined) -> "rebar.lock";
+resolve_lock(File) -> File.
+
 main(Args) ->
   case main(Args, []) of
     {ok, State} ->
-      LockFile = resolve_lockfile(proplists:get_value(dir, State)),
-      {ok, Terms} = file:consult(LockFile),
+      {ok, Terms} = file:consult(resolve_lock(proplists:get_value(file, State))),
       io:put_chars(nix_derivation(Terms));
     {error, Reason} ->
       io:format("Error: ~s~n", [Reason]),
@@ -12,21 +14,15 @@ main(Args) ->
   end.
 
 main([], State) ->
-  {ok, State};
-main(["--dir", Dir | Rest], State) ->
-  main(Rest, [{dir, Dir} | State]);
+    {ok, State};
+main(["-file", File | Rest], State) ->
+    main(Rest, [{file, File} | State]);
 main([Arg | _Rest], _State) ->
-  io:put_chars(standard_error, "Usage: rebar32nix [--dir DIR]\n"),
-  {error, io_lib:format("Unknown argument: ~s", [Arg])}.
-
-resolve_lockfile(undefined) ->
-  {ok, Cwd} = file:get_cwd(),
-  filename:join(Cwd, "rebar.lock");
-resolve_lockfile(Dir) ->
-  filename:join(Dir, "rebar.lock").
+    io:put_chars(standard_error, "Usage: rebar32nix [-file LOCK]\n"),
+    {error, io_lib:format("Unknown argument: ~s", [Arg])}.
 
 nix_derivation(Lock) ->
-  io_lib:format(<<"
+    io_lib:format(<<"
 { stdenv, rebar3, writeShellScriptBin }:
 
 with stdenv.lib;
@@ -62,7 +58,7 @@ rebar3_closure([Pkgs]) ->
     ["{", lists:concat(lists:map(fun(X) -> to_fetch(X) end, Tuples)), "}"].
 
 to_fetch({Name, {{git, Url, {ref, Ref}}, _N}}) ->
-  io_lib:format("
+    io_lib:format("
   \"~s\" = builtins.fetchGit {
     url = \"~s\";
     rev = \"~s\";
