@@ -22,7 +22,7 @@ main([Arg | _Rest], _State) ->
     {error, io_lib:format("Unknown argument: ~s", [Arg])}.
 
 nix_derivation(Lock) ->
-    io_lib:format(<<"
+    io_lib:format(<<"# Generated with rebar32nix
 { stdenv, rebar3, writeShellScriptBin }:
 
 with stdenv.lib;
