@@ -30,7 +30,7 @@ with stdenv.lib;
 let
   closure = ~s;
 
-  fakeGit = writeShellScriptBin ''git'' ''cat rev || true'';
+  fakeGit = writeShellScriptBin \"git\" \"cat rev || true\"
 
   linkPackage = name: src: ''
     mkdir -p _build/default/lib/${name}/ebin
@@ -40,14 +40,14 @@ let
 in
 
 stdenv.mkDerivation {
-  name = ''rebar3-release'';
+  name = \"rebar3-release\";
   src = ./.;
 
   buildInputs = [ fakeGit rebar3 ];
 
   configurePhase = concatStrings (mapAttrsToList linkPackage closure);
-  buildPhase = ''rebar3 release --dev-mode false --include-erts false'';
-  installPhase = ''mv _build/default/rel/* $out'';
+  buildPhase = \"rebar3 release --dev-mode false --include-erts false\";
+  installPhase = \"mv _build/default/rel/* $out\";
 }
 ">>, [rebar3_closure(Lock)]).
 
@@ -59,7 +59,7 @@ rebar3_closure([Pkgs]) ->
 
 to_fetch({Name, {{git, Url, {ref, Ref}}, _N}}) ->
     io_lib:format("
-  \"~s\" = builtins.fetchGit {
+  ~s = builtins.fetchGit {
     url = \"~s\";
     rev = \"~s\";
   };
