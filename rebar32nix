@@ -8,7 +8,7 @@ main([File]) ->
 
 nix_derivation(Lock) ->
     io_lib:format(<<"# Generated with rebar32nix
-{ stdenv, rebar3, writeShellScriptBin }:
+{ stdenv, rebar3 ? null, writeShellScriptBin }:
 
 with stdenv.lib;
 
