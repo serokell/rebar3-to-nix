@@ -1,25 +1,10 @@
 #!/usr/bin/env escript
 
-resolve_lock(undefined) -> "rebar.lock";
-resolve_lock(File) -> File.
-
-main(Args) ->
-  case main(Args, []) of
-    {ok, State} ->
-      {ok, Terms} = file:consult(resolve_lock(proplists:get_value(file, State))),
-      io:put_chars(nix_derivation(Terms));
-    {error, Reason} ->
-      io:format("Error: ~s~n", [Reason]),
-      halt(1)
-  end.
-
-main([], State) ->
-    {ok, State};
-main(["-file", File | Rest], State) ->
-    main(Rest, [{file, File} | State]);
-main([Arg | _Rest], _State) ->
-    io:put_chars(standard_error, "Usage: rebar32nix [-file LOCK]\n"),
-    {error, io_lib:format("Unknown argument: ~s", [Arg])}.
+main([]) ->
+    main([<<".">>]);
+main([File]) ->
+    {ok, Terms} = file:consult(filename:join([File, <<"rebar.lock">>])),
+    io:put_chars(nix_derivation(Terms)).
 
 nix_derivation(Lock) ->
     io_lib:format(<<"# Generated with rebar32nix
